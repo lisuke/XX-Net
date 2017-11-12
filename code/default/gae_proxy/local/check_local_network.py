@@ -2,7 +2,6 @@
 import sys
 import os
 
-import httplib
 import time
 import threading
 
@@ -31,9 +30,6 @@ xlog = getLogger("gae_proxy")
 max_timeout = 5
 
 
-#####################################
-
-
 class CheckNetwork(object):
     def __init__(self, type="IPv4"):
         self.type = type
@@ -44,15 +40,17 @@ class CheckNetwork(object):
         self.last_check_time = 0
         self.continue_fail_count = 0
 
-        if config.PROXY_USER:
-            self.proxy = "%s://%s:%s@%s:%d" % \
-                (config.PROXY_TYPE, config.PROXY_USER, config.PROXY_PASSWD, config.PROXY_HOST, config.PROXY_PORT)
+        if config.PROXY_ENABLE:
+            if config.PROXY_USER:
+                self.proxy = "%s://%s:%s@%s:%d" % \
+                    (config.PROXY_TYPE, config.PROXY_USER, config.PROXY_PASSWD, config.PROXY_HOST, config.PROXY_PORT)
+            else:
+                self.proxy = "%s://%s:%d" % \
+                    (config.PROXY_TYPE, config.PROXY_HOST, config.PROXY_PORT)
         else:
-            self.proxy = "%s://%s:%d" % \
-                (config.PROXY_TYPE, config.PROXY_HOST, config.PROXY_PORT)
+            self.proxy = None
 
         self.http_client = simple_http_client.Client(self.proxy, timeout=30)
-
 
     def report_ok(self):
         self.network_stat = "OK"
@@ -69,7 +67,7 @@ class CheckNetwork(object):
             # network_stat = "unknown"
             xlog.debug("report_connect_fail %s continue_fail_count:%d",
                        self.type, self.continue_fail_count)
-            self._triger_check_network(True)
+            self.triger_check_network(True)
 
     def get_stat(self):
         return self.network_stat
@@ -79,7 +77,6 @@ class CheckNetwork(object):
 
     def _test_host(self, url):
         try:
-
             header = {
                 "user-agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Safari/537.36",
                 "accept": "application/json, text/javascript, */*; q=0.01",
@@ -91,6 +88,9 @@ class CheckNetwork(object):
             if response:
                 return True
         except Exception as e:
+            if __name__ == "__main__":
+                xlog.exception("test %s e:%r", url, e)
+
             pass
 
         return False
@@ -121,7 +121,7 @@ class CheckNetwork(object):
         self._checking_num -= 1
         self._checking_lock.release()
 
-    def _triger_check_network(self, fail=False, force=False):
+    def triger_check_network(self, fail=False, force=False):
         time_now = time.time()
         if not force:
             if self._checking_num > 0:
@@ -135,7 +135,7 @@ class CheckNetwork(object):
                 if time_now - self.last_check_time < 10:
                     return
 
-                self.last_check_time = time_now
+        self.last_check_time = time_now
         threading.Thread(target=self._simple_check_worker).start()
 
 
@@ -146,11 +146,12 @@ IPv4.urls = [
             "https://code.jquery.com",
             "https://cdn.bootcss.com",
             "https://cdnjs.cloudflare.com"]
-IPv4._triger_check_network()
+IPv4.triger_check_network()
 
 IPv6 = CheckNetwork("IPv6")
 IPv6.urls = ["http://[2001:470:1:18::125]", "http://[2001:41d0:8:e8ad::1]", "http://[2001:260:401:372::5f]"]
-IPv6._triger_check_network()
+IPv6.triger_check_network()
+
 
 def report_ok(ip):
     if "." in ip:
@@ -168,9 +169,9 @@ def report_fail(ip):
 
 def is_ok(ip):
     if "." in ip:
-        IPv4.is_ok()
+        return IPv4.is_ok()
     else:
-        IPv6.is_ok()
+        return IPv6.is_ok()
 
 
 if __name__ == "__main__":
