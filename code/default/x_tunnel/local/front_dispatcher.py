@@ -1,12 +1,14 @@
 import time
 import gae_front
 from cloudflare_front.front import front as cloudflare_front
-from heroku_front.front import front as heroku_front
+#from heroku_front.front import front as heroku_front
+all_fronts = [gae_front, cloudflare_front]
+
+# import direct_front
+# all_fronts = [direct_front]
 
 from xlog import getLogger
 xlog = getLogger("x_tunnel")
-
-all_fronts = [gae_front, cloudflare_front, heroku_front]
 
 running_front_list = list(all_fronts)
 current_front = running_front_list.pop(0)
@@ -34,6 +36,7 @@ def get_front(host, timeout):
 
 
 def request(method, host, path="/", headers={}, data="", timeout=100):
+    # xlog.debug("front request %s timeout:%d", path, timeout)
     start_time = time.time()
 
     content, status, response = "", 603, {}
@@ -43,7 +46,7 @@ def request(method, host, path="/", headers={}, data="", timeout=100):
             return "", 602, {}
 
         content, status, response = front.request(
-            method, host=host, path=path, headers=headers, data=data, timeout=timeout)
+            method, host=host, path=path, headers=dict(headers), data=data, timeout=timeout)
 
         if status not in [200, 521]:
             continue

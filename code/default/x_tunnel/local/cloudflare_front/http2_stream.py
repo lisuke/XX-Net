@@ -26,6 +26,7 @@ from hyper.http20.exceptions import ProtocolError, StreamResetError
 from hyper.http20.util import h2_safe_headers
 from hyper.http20.response import strip_headers
 from hyper.common.util import to_host_port_tuple, to_native_string, to_bytestring
+import simple_http_client
 
 from http_common import *
 from xlog import getLogger
@@ -111,8 +112,7 @@ class Stream(object):
         self.response_body = []
         self.response_body_len = 0
 
-        threading.Thread(target=self.timeout_response).start()
-        self.start_request()
+        threading.Thread(target=self.start_request).start()
 
     def start_request(self):
         """
@@ -155,12 +155,17 @@ class Stream(object):
         header_frame.flags.add('END_HEADERS')
 
         # Send the header frame.
+        self.task.set_state("start send header")
         self._send_cb(header_frame)
 
         # Transition the stream state appropriately.
         self.state = STATE_OPEN
 
+        self.task.set_state("start send left body")
         self.send_left_body()
+        self.task.set_state("end send left body")
+
+        self.timeout_response()
 
     def add_header(self, name, value, replace=False):
         """
@@ -243,7 +248,6 @@ class Stream(object):
                 self._send_cb(w)
         elif frame.type == RstStreamFrame.type:
             # Rest Frame send from server is not define in RFC
-            # but GAE server will not work on this connection anymore
             inactive_time = time.time() - self.connection.last_active_time
             xlog.debug("%s Stream %d Rest by server, inactive:%d. error code:%d",
                        self.ip, self.stream_id, inactive_time, frame.error_code)
@@ -300,7 +304,7 @@ class Stream(object):
         self.task.responsed = True
         status = int(self.response_headers[b':status'][0])
         strip_headers(self.response_headers)
-        response = BaseResponse(status=status, headers=self.response_headers)
+        response = simple_http_client.BaseResponse(status=status, headers=self.response_headers)
         response.ssl_sock = self.connection.ssl_sock
         response.worker = self.connection
         response.task = self.task
@@ -367,7 +371,8 @@ class Stream(object):
         )
 
     def timeout_response(self):
-        while time.time() - self.task.start_time < self.task.timeout:
+        start_time = time.time()
+        while time.time() - start_time < self.task.timeout:
             time.sleep(1)
             if self._remote_closed:
                 return
@@ -376,6 +381,8 @@ class Stream(object):
                   self.connection.ssl_sock.ip,
                   self.task.get_trace(),
                   self.connection.get_trace())
+        self.task.set_state("timeout")
+
         if self.task.responsed:
             self.task.finish()
         else:

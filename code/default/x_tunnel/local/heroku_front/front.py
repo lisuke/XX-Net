@@ -26,7 +26,7 @@ class Front(object):
     name = "heroku_front"
 
     def __init__(self):
-        self.hosts = ["xxnet4.herokuapp.com"]
+        self.hosts = []
         self.host = str(random.choice(self.hosts))
 
         self.dispatcher = http_dispatcher.HttpsDispatcher(self.host, self.log_debug_data)
@@ -104,7 +104,7 @@ class Front(object):
         if not worker:
             return None
 
-        return worker.get_score()
+        return worker.get_score() * 5
 
     def worker_num(self):
         return len(self.dispatcher.workers)
@@ -164,7 +164,10 @@ class Front(object):
         else:
             if status == 404:
                 xlog.warn("heroku:%s fail", heroku_host)
-                self.hosts.remove(heroku_host)
+                try:
+                    self.hosts.remove(heroku_host)
+                except:
+                    pass
 
             self.last_fail_time = time.time()
             self.continue_fail_num += 1

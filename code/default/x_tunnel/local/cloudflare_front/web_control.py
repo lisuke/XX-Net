@@ -37,7 +37,7 @@ from ip_manager import ip_manager
 os.environ['HTTPS_PROXY'] = ''
 current_path = os.path.dirname(os.path.abspath(__file__))
 root_path = os.path.abspath(os.path.join(current_path, os.pardir, os.pardir))
-top_path = os.path.abspath(os.path.join(root_path, os.pardir, os.pardir))
+top_path = os.path.abspath(os.path.join(root_path, os.pardir, os.pardir, os.pardir))
 web_ui_path = os.path.join(current_path, os.path.pardir, "web_ui")
 
 
@@ -65,55 +65,28 @@ class User_config(object):
     user_special = User_special()
 
     def __init__(self):
+        self.CONFIG_USER_FILENAME = os.path.abspath( os.path.join(top_path, 'data', 'x_tunnel', 'cloudflare_config.ini'))
         self.load()
 
     def load(self):
         ConfigParser.RawConfigParser.OPTCRE = re.compile(r'(?P<option>[^=\s][^=]*)\s*(?P<vi>[=])\s*(?P<value>.*)$')
 
         self.DEFAULT_CONFIG = ConfigParser.ConfigParser()
-        DEFAULT_CONFIG_FILENAME = os.path.abspath( os.path.join(current_path, 'proxy.ini'))
+        DEFAULT_CONFIG_FILENAME = os.path.abspath( os.path.join(current_path, 'default_config.ini'))
 
 
         self.USER_CONFIG = ConfigParser.ConfigParser()
-        CONFIG_USER_FILENAME = os.path.abspath( os.path.join(top_path, 'data', 'gae_proxy', 'config.ini'))
 
         try:
             if os.path.isfile(DEFAULT_CONFIG_FILENAME):
                 self.DEFAULT_CONFIG.read(DEFAULT_CONFIG_FILENAME)
-                self.user_special.scan_ip_thread_num = self.DEFAULT_CONFIG.getint('google_ip', 'max_scan_ip_thread_num')
             else:
                 return
 
-            if os.path.isfile(CONFIG_USER_FILENAME):
-                self.USER_CONFIG.read(CONFIG_USER_FILENAME)
+            if os.path.isfile(self.CONFIG_USER_FILENAME):
+                self.USER_CONFIG.read(self.CONFIG_USER_FILENAME)
             else:
                 return
-
-            try:
-                self.user_special.appid = self.USER_CONFIG.get('gae', 'appid')
-                self.user_special.password = self.USER_CONFIG.get('gae', 'password')
-            except:
-                pass
-
-            try:
-                self.user_special.host_appengine_mode = self.USER_CONFIG.get('hosts', 'appengine.google.com')
-            except:
-                pass
-
-            try:
-                self.user_special.scan_ip_thread_num = config.CONFIG.getint('google_ip', 'max_scan_ip_thread_num')
-            except:
-                self.user_special.scan_ip_thread_num = self.DEFAULT_CONFIG.getint('google_ip', 'max_scan_ip_thread_num')
-
-            try:
-                self.user_special.auto_adjust_scan_ip_thread_num = config.CONFIG.getint('google_ip', 'auto_adjust_scan_ip_thread_num')
-            except:
-                pass
-
-            try:
-                self.user_special.use_ipv6 = config.CONFIG.getint('google_ip', 'use_ipv6')
-            except:
-                pass
 
             self.user_special.proxy_enable = self.USER_CONFIG.get('proxy', 'enable')
             self.user_special.proxy_type = self.USER_CONFIG.get('proxy', 'type')
@@ -126,13 +99,8 @@ class User_config(object):
             xlog.warn("User_config.load except:%s", e)
 
     def save(self):
-        CONFIG_USER_FILENAME = os.path.abspath( os.path.join(top_path, 'data', 'gae_proxy', 'config.ini'))
         try:
-            f = open(CONFIG_USER_FILENAME, 'w')
-            if self.user_special.appid != "":
-                f.write("[gae]\n")
-                f.write("appid = %s\n" % self.user_special.appid)
-                f.write("password = %s\n\n" % self.user_special.password)
+            f = open(self.CONFIG_USER_FILENAME, 'w')
 
             f.write("[proxy]\n")
             f.write("enable = %s\n" % self.user_special.proxy_enable)
@@ -142,26 +110,10 @@ class User_config(object):
             f.write("user = %s\n" % self.user_special.proxy_user)
             f.write("passwd = %s\n\n" % self.user_special.proxy_passwd)
 
-            """
-            if self.user_special.host_appengine_mode != "gae":
-                f.write("[hosts]\n")
-                f.write("appengine.google.com = %s\n" % self.user_special.host_appengine_mode)
-                f.write("www.google.com = %s\n\n" % self.user_special.host_appengine_mode)
-            """
-
-            f.write("[google_ip]\n")
-
-            if int(self.user_special.auto_adjust_scan_ip_thread_num) != self.DEFAULT_CONFIG.getint('google_ip', 'auto_adjust_scan_ip_thread_num'):
-                f.write("auto_adjust_scan_ip_thread_num = %d\n\n" % int(self.user_special.auto_adjust_scan_ip_thread_num))
-            if int(self.user_special.scan_ip_thread_num) != self.DEFAULT_CONFIG.getint('google_ip', 'max_scan_ip_thread_num'):
-                f.write("max_scan_ip_thread_num = %d\n\n" % int(self.user_special.scan_ip_thread_num))
-
-            if int(self.user_special.use_ipv6) != self.DEFAULT_CONFIG.getint('google_ip', 'use_ipv6'):
-                f.write("use_ipv6 = %d\n\n" % int(self.user_special.use_ipv6))
-
             f.close()
+            xlog.info("save config to %s", self.CONFIG_USER_FILENAME)
         except:
-            xlog.warn("launcher.config save user config fail:%s", CONFIG_USER_FILENAME)
+            xlog.exception("launcher.config save user config fail:%s", self.CONFIG_USER_FILENAME)
 
 
 user_config = User_config()
@@ -203,7 +155,7 @@ class ControlHandler(simple_http_server.HttpServerHandler):
         elif path == "/status":
             return self.req_status_handler()
         else:
-            xlog.debug('GAEProxy Web_control %s %s %s ', self.address_string(), self.command, self.path)
+            xlog.debug('cloudflare Web_control %s %s %s ', self.address_string(), self.command, self.path)
 
         if path == "/config":
             return self.req_config_handler()
@@ -249,7 +201,7 @@ class ControlHandler(simple_http_server.HttpServerHandler):
         except:
             pass
 
-        xlog.debug ('GAEProxy web_control %s %s %s ', self.address_string(), self.command, self.path)
+        xlog.debug ('cloudflare web_control %s %s %s ', self.address_string(), self.command, self.path)
         try:
             ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))
             if ctype == 'multipart/form-data':
@@ -277,16 +229,8 @@ class ControlHandler(simple_http_server.HttpServerHandler):
         cmd = "get_last"
         if reqs["cmd"]:
             cmd = reqs["cmd"][0]
-        if cmd == "set_buffer_size" :
-            if not reqs["buffer_size"]:
-                data = '{"res":"fail", "reason":"size not set"}'
-                mimetype = 'text/plain'
-                self.send_response_nc(mimetype, data)
-                return
 
-            buffer_size = reqs["buffer_size"][0]
-            xlog.set_buffer_size(buffer_size)
-        elif cmd == "get_last":
+        if cmd == "get_last":
             max_line = int(reqs["max_line"][0])
             data = xlog.get_last_lines(max_line)
         elif cmd == "get_new":
@@ -347,24 +291,12 @@ class ControlHandler(simple_http_server.HttpServerHandler):
         return lang_code
 
     def req_status_handler(self):
-        if "user-agent" in self.headers.dict:
-            user_agent = self.headers.dict["user-agent"]
-        else:
-            user_agent = ""
 
         good_ip_num = ip_manager.good_ip_num
         if good_ip_num > len(ip_manager.gws_ip_list):
             good_ip_num = len(ip_manager.gws_ip_list)
 
         res_arr = {
-                   "sys_platform": "%s, %s" % (platform.machine(), platform.platform()),
-                   "os_system": platform.system(),
-                   "os_version": platform.version(),
-                   "os_release": platform.release(),
-                   "architecture": platform.architecture(),
-                   "os_detail": env_info.os_detail(),
-                   "language": self.get_os_language(),
-                   "browser": user_agent,
                    "xxnet_version": self.xxnet_version(),
                    "python_version": platform.python_version(),
                    "openssl_version": get_openssl_version(),
@@ -373,19 +305,9 @@ class ControlHandler(simple_http_server.HttpServerHandler):
                    "pac_url": config.pac_url,
                    "use_ipv6": config.CONFIG.getint("ip_manager", "use_ipv6"),
 
-                   "gae_appid": "|".join(config.GAE_APPIDS),
-                   "working_appid": "|".join(appid_manager.working_appid_list),
-                   "out_of_quota_appids": "|".join(appid_manager.out_of_quota_appids),
-                   "not_exist_appids": "|".join(appid_manager.not_exist_appids),
-
                    "network_state": check_local_network.network_stat,
                    "ip_num": len(ip_manager.gws_ip_list),
                    "good_ip_num": good_ip_num,
-                   "connected_link_new": len(https_manager.new_conn_pool.pool),
-                   "connected_link_used": len(https_manager.gae_conn_pool.pool),
-                   "worker_h1": http_dispatch.h1_num,
-                   "worker_h2": http_dispatch.h2_num,
-                   "is_idle": int(http_dispatch.is_idle()),
                    "scan_ip_thread_num": ip_manager.scan_thread_count,
                    "ip_quality": ip_manager.ip_quality(),
                    "block_stat": connect_control.block_stat(),
@@ -411,13 +333,6 @@ class ControlHandler(simple_http_server.HttpServerHandler):
             elif reqs['cmd'] == ['set_config']:
                 appids = self.postvars['appid'][0]
                 if appids != user_config.user_special.appid:
-                    if appids and ip_manager.good_ip_num:
-                        fail_appid_list = test_appid.test_appids(appids)
-                        if len(fail_appid_list):
-                            fail_appid = "|".join(fail_appid_list)
-                            return self.send_response_nc('text/html', '{"res":"fail", "reason":"appid fail:%s"}' % fail_appid)
-
-                    appid_updated = True
                     user_config.user_special.appid = appids
 
                 user_config.user_special.proxy_enable = self.postvars['proxy_enable'][0]
@@ -445,12 +360,6 @@ class ControlHandler(simple_http_server.HttpServerHandler):
                 user_config.save()
 
                 config.load()
-                appid_manager.reset_appid()
-                import connect_manager
-                connect_manager.load_proxy_config()
-                connect_manager.https_manager.load_config()
-                if appid_updated:
-                    http_dispatch.close_all_worker()
 
                 ip_manager.reset()
                 check_ip.load_proxy_config()
@@ -536,12 +445,5 @@ class ControlHandler(simple_http_server.HttpServerHandler):
 
     def req_debug_handler(self):
         data = ""
-        for obj in [https_manager, http_dispatch]:
-            data += "%s\r\n" % obj.__class__
-            for attr in dir(obj):
-                if attr.startswith("__"):
-                    continue
-                data += "    %s = %s\r\n" % (attr, getattr(obj, attr))
-
         mimetype = 'text/plain'
         self.send_response_nc(mimetype, data)

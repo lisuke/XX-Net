@@ -1,31 +1,13 @@
 import time
-import collections
 import Queue
 
+import simple_http_client
+from config import config
 from xlog import getLogger
 xlog = getLogger("cloudflare_front")
 
 
-class GAE_Exception(Exception):
-    def __init__(self, error_code, message):
-        xlog.debug("GAE_Exception %r %r", error_code, message)
-        self.error_code = error_code
-        self.message = "%r:%s" % (error_code, message)
-
-    def __str__(self):
-        # for %s
-        return repr(self.message)
-
-    def __repr__(self):
-        # for %r
-        return repr(self.message)
-
-
-class BaseResponse(object):
-    def __init__(self, status=601, reason="", headers={}, body=""):
-        self.status = status
-        self.reason = reason
-        self.headers = headers
+show_state_debug = config.getint("system", "show_state_debug", 0)
 
 
 class Task(object):
@@ -45,6 +27,7 @@ class Task(object):
         self.body_len = 0
         self.body_readed = 0
         self.content_length = None
+        self.worker = None
         self.read_buffer = ""
         self.responsed = False
         self.finished = False
@@ -105,7 +88,8 @@ class Task(object):
         # for debug trace
         time_now = time.time()
         self.trace_time.append((time_now, stat))
-        # xlog.debug("%s stat:%s", self.unique_id, stat)
+        if show_state_debug:
+            xlog.debug("%s stat:%s", self.unique_id, stat)
         return time_now
 
     def get_trace(self):
@@ -127,7 +111,7 @@ class Task(object):
         self.responsed = True
         err_text = "response_fail:%s" % reason
         xlog.debug("%s %s", self.url, err_text)
-        res = BaseResponse(body=err_text)
+        res = simple_http_client.BaseResponse(body=err_text)
         res.task = self
         res.worker = self.worker
         self.queue.put(res)
@@ -172,14 +156,19 @@ class HTTP_worker(object):
         now = time.time()
         inactive_time = now - self.last_active_time
 
+        rtt = self.rtt
+        if inactive_time > 30:
+            if rtt > 1000:
+                rtt = 1000
+
         if self.version == "1.1":
-            rtt = self.rtt + 100
+            rtt += 100
         else:
-            rtt = self.rtt + len(self.streams) * 3000
+            rtt += len(self.streams) * 100
 
         if inactive_time > 5:
             score = rtt
-        elif inactive_time < 0.001:
+        elif inactive_time < 0.01:
             score = rtt + 50000
         else:
             # inactive_time < 2
