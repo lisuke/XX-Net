@@ -34,7 +34,7 @@
                 <div class="row-fluid">
                     <div id="logo" class="span8">
                         <a href="/" title="XX-Net">
-                            <img src="/img/logo.png" alt="Logo"></img>
+                            <img src="/img/logo.png" alt="Logo">
                             XX-Net
                             <span id="version_on_logo" class="" ></span>
                         </a>
@@ -167,7 +167,7 @@
         var versionType;
 
         function displayErrorMessage() {
-            tip('{{ _( "Unkown error occured. Please refresh the page and try again" ) }}', 'error');
+            tip('{{ _( "Unkown error occured. Please refresh the page and try again." ) }}', 'error');
         }
 
         function clearProgressBar() {
@@ -272,7 +272,7 @@
             });
         }
 
-        function updateVersion(checkhash=1) {
+        function updateBase(checkhash){
             $('#update-notify').addClass('hide');
             var pageRequests = {};
             pageRequests['cmd'] = 'update_version';
@@ -302,6 +302,13 @@
                     displayErrorMessage();
                 }
             });
+        }
+
+        function updateVersion() {
+            updateBase(1);
+        }
+        function updateVersionWithoutHashCheck(){
+            updateBase(0);
         }
 
         function getUpdateInfo() {

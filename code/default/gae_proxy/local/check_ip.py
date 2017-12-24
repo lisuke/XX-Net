@@ -121,7 +121,7 @@ class Cert_Exception(Exception):
 
 def load_proxy_config():
     global default_socket
-    if config.PROXY_ENABLE:
+    if int(config.PROXY_ENABLE):
 
         if config.PROXY_TYPE == "HTTP":
             proxy_type = socks.HTTP
@@ -139,8 +139,9 @@ load_proxy_config()
 import threading
 network_fail_lock = threading.Lock()
 
+
 def connect_ssl(ip, port=443, timeout=5, check_cert=True, close_cb=None):
-    if check_local_network.is_ok(ip):
+    if not check_local_network.is_ok(ip):
         with network_fail_lock:
            time.sleep(0.1)
 
@@ -148,7 +149,7 @@ def connect_ssl(ip, port=443, timeout=5, check_cert=True, close_cb=None):
 
     sni = sni_generater.get()
 
-    if config.PROXY_ENABLE:
+    if int(config.PROXY_ENABLE):
         sock = socks.socksocket(socket.AF_INET if ':' not in ip else socket.AF_INET6)
     else:
         sock = socket.socket(socket.AF_INET if ':' not in ip else socket.AF_INET6)
@@ -162,7 +163,11 @@ def connect_ssl(ip, port=443, timeout=5, check_cert=True, close_cb=None):
 
     ssl_sock = openssl_wrap.SSLConnection(openssl_context, sock, ip, close_cb)
     ssl_sock.set_connect_state()
-    ssl_sock.set_tlsext_host_name(sni)
+    if hasattr(ssl_sock, 'set_tlsext_host_name'):
+        try:
+            ssl_sock.set_tlsext_host_name(sni)
+        except:
+            pass
 
     time_begin = time.time()
     ssl_sock.connect(ip_port)
@@ -374,3 +379,4 @@ if __name__ == "__main__":
             print("not support")
     else:
         xlog.info("check_ip <ip>")
+

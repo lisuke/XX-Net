@@ -414,7 +414,7 @@ class ProxySession():
         while len(data):
             sn, plen = struct.unpack("<II", data.get(8))
             pdata = data.get_buf(plen)
-            xlog.debug("upload sn:%d len:%d", sn, plen)
+            # xlog.debug("upload sn:%d len:%d", sn, plen)
 
             self.receive_process.put(sn, pdata)
             self.last_upload_time = time.time()
@@ -635,7 +635,7 @@ def call_api(path, req_info):
         while time.time() - start_time < 30:
             content, status, response = g.http_client.request(method="POST", host=g.config.api_server, path=path,
                                                      headers={"Content-Type": "application/json"},
-                                                     data=upload_post_data, timeout=10)
+                                                     data=upload_post_data, timeout=5)
             if status >= 400:
                 time.sleep(1)
                 continue

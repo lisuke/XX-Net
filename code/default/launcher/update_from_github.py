@@ -8,10 +8,12 @@ import re
 import zipfile
 import shutil
 import stat
+import glob
 
 current_path = os.path.dirname(os.path.abspath(__file__))
 root_path = os.path.abspath( os.path.join(current_path, os.pardir))
 top_path = os.path.abspath(os.path.join(root_path, os.pardir, os.pardir))
+code_path = os.path.abspath(os.path.join(root_path, os.pardir))
 data_root = os.path.join(top_path, 'data')
 python_path = os.path.join(root_path, 'python27', '1.0')
 noarch_lib = os.path.join(python_path, 'lib', 'noarch')
@@ -49,7 +51,7 @@ init_update_info(config.get(["update", "check_update"]))
 
 def request(url, retry=0, timeout=30):
     if retry == 0:
-        if config.get(["proxy", "enable"], 0):
+        if int(config.get(["proxy", "enable"], 0)):
             client = simple_http_client.Client(proxy={
                 "type": config.get(["proxy", "type"], ""),
                 "host": config.get(["proxy", "host"], ""),
@@ -88,23 +90,51 @@ def download_file(url, filename):
         try:
             xlog.info("download %s to %s, retry:%d", url, filename, i)
             req = request(url, i, timeout=120)
-            file_size = progress[url]["size"] = int(req.getheader('Content-Length', 0))
+            if not req:
+                continue
 
-            left = file_size
-            downloaded = 0
-            with open(filename, 'wb') as fp:
-                while True:
-                    chunk_len = min(65536, left)
-                    if not chunk_len:
-                        break
+            start_time = time.time()
+            timeout = 300
 
-                    chunk = req.read(chunk_len)
-                    if not chunk:
-                        break
-                    fp.write(chunk)
-                    downloaded += len(chunk)
-                    progress[url]["downloaded"] = downloaded
-                    left -= len(chunk)
+            if req.chunked:
+                # don't known the file size, set to large for show the progress
+                progress[url]["size"] = 20 * 1024 * 1024
+
+                downloaded = 0
+                with open(filename, 'wb') as fp:
+                    while True:
+                        time_left = timeout - (time.time() - start_time)
+                        if time_left < 0:
+                            raise Exception("time out")
+
+                        dat = req.read(timeout=time_left)
+                        if not dat:
+                            break
+
+                        fp.write(dat)
+                        downloaded += len(dat)
+                        progress[url]["downloaded"] = downloaded
+
+                progress[url]["status"] = "finished"
+                return True
+            else:
+                file_size = progress[url]["size"] = int(req.getheader('Content-Length', 0))
+
+                left = file_size
+                downloaded = 0
+                with open(filename, 'wb') as fp:
+                    while True:
+                        chunk_len = min(65536, left)
+                        if not chunk_len:
+                            break
+
+                        chunk = req.read(chunk_len)
+                        if not chunk:
+                            break
+                        fp.write(chunk)
+                        downloaded += len(chunk)
+                        progress[url]["downloaded"] = downloaded
+                        left -= len(chunk)
 
             if downloaded != progress[url]["size"]:
                 xlog.warn("download size:%d, need size:%d, download fail.", downloaded, progress[url]["size"])
@@ -275,10 +305,61 @@ def download_overwrite_new_version(xxnet_version,checkhash=1):
     shutil.rmtree(xxnet_unzip_path, ignore_errors=True)
 
 
-def update_current_version(xxnet_version):
+def get_local_versions():
+    
+    def get_folder_version(folder):
+        f = os.path.join(code_path, folder, "version.txt")
+        try:
+            with open(f) as fd:
+                content = fd.read()
+                p = re.compile(r'([0-9]+)\.([0-9]+)\.([0-9]+)')
+                m = p.match(content)
+                if m:
+                    version = m.group(1) + "." + m.group(2) + "." + m.group(3)
+                    return version
+        except:
+            return False
+
+    
+    files_in_code_path = os.listdir(code_path)
+    local_versions = []
+    for name in files_in_code_path:
+        if os.path.isdir(os.path.join(code_path, name)) :
+            v = get_folder_version(name)
+            if v :
+                local_versions.append([v, name] )
+    local_versions.sort(key= lambda s: map(int, s[0].split('.')) , reverse=True)
+    return local_versions
+
+
+def get_current_version_dir():
+    current_dir = os.path.split(root_path)[-1]
+    return current_dir
+
+
+def del_version(version):
+    if version == get_current_version_dir():
+        xlog.warn("try to delect current version.")
+        return False
+
+    try:
+        shutil.rmtree( os.path.join(top_path, "code", version) )
+        return True
+    except Exception as e:
+        xlog.warn("deleting fail: %s", e)
+        return False
+
+
+def update_current_version(version):
+    start_script = os.path.join(top_path, "code", version, "launcher", "start.py")
+    if not os.path.isfile(start_script):
+        xlog.warn("set version %s not exist", version)
+        return False
+
     current_version_file = os.path.join(top_path, "code", "version.txt")
     with open(current_version_file, "w") as fd:
-        fd.write(xxnet_version)
+        fd.write(version)
+    return True
 
 
 def restart_xxnet(version=None):
@@ -332,3 +413,81 @@ def start_update_version(version, checkhash=1):
     th.start()
     return True
 
+            
+def delete_to_save_disk():
+    def rm_paths(path_list):
+        del_fullpaths = []
+        for ps in path_list:
+            pt = os.path.join(top_path, ps)
+            pt = glob.glob(pt)
+            del_fullpaths += pt
+        if del_fullpaths:
+            xlog.info("DELETE: %s", ' , '.join(del_fullpaths))
+            
+            for pt in del_fullpaths:
+                try:
+                    if os.path.isfile(pt):
+                        os.remove(pt) 
+                    elif os.path.isdir(pt):
+                        shutil.rmtree(pt)
+                except:
+                    pass
+    
+    
+    keep_old_num = config.get(["modules", "launcher", "keep_old_ver_num"], 6)  # default keep several old versions
+    if keep_old_num < 99 and keep_old_num >=0 :  # 99 means don't delete any old version
+        del_paths = []
+        local_vs = get_local_versions()
+        for i in range(len(local_vs)):
+            if local_vs[i][0] == current_version():
+                for u in range( i+keep_old_num+1 ,  len(local_vs)) :
+                    del_paths.append( "code/" + local_vs[u][1] + "/" )
+                break
+        if del_paths :
+            rm_paths(del_paths)
+    
+    
+    
+    del_paths = []
+    if config.get(["savedisk", "clear_cache"], 0) :
+        del_paths += [
+            "data/*/*.*.log",
+            "data/*/*.log.*",
+            "data/downloads/XX-Net-*.zip"
+        ]
+    
+    if config.get(["savedisk", "del_win"], 0) :
+        del_paths += [
+            "code/*/python27/1.0/WinSxS/", 
+            "code/*/python27/1.0/*.dll", 
+            "code/*/python27/1.0/*.exe", 
+            "code/*/python27/1.0/Microsoft.VC90.CRT.manifest", 
+            "code/*/python27/1.0/lib/win32/"
+        ]
+    if config.get(["savedisk", "del_mac"], 0) :
+        del_paths += [ 
+            "code/*/python27/1.0/lib/darwin/" 
+        ]
+    if config.get(["savedisk", "del_linux"], 0) :
+        del_paths += [ 
+            "code/*/python27/1.0/lib/linux/" 
+        ]
+    if config.get(["savedisk", "del_gae"], 0) :
+        del_paths += [ 
+            "code/*/gae_proxy/" 
+        ]
+    if config.get(["savedisk", "del_gae_server"], 0) :
+        del_paths += [ 
+            "code/*/gae_proxy/server/" 
+        ]
+    if config.get(["savedisk", "del_xtunnel"], 0) :
+        del_paths += [ 
+            "code/*/x_tunnel/" 
+        ]
+    if config.get(["savedisk", "del_smartroute"], 0) :
+        del_paths += [ 
+            "code/*/smart_router/" 
+        ]
+        
+    if del_paths:
+        rm_paths(del_paths)

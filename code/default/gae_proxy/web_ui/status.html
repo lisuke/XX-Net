@@ -86,17 +86,17 @@
                 <td id="proxy-listen"></td>
             </tr>
             <tr>
-                <td>{{ _( "PAC URL" ) }}</td>
-                <td id="pac-url"></td>
-            </tr>
-            <tr>
                 <td>{{ _( "USE IPv6" ) }}</td>
                 <td id="use-ipv6"></td>
+            </tr>
+            <tr>
+                <td>{{ _( "LAN proxy" ) }}</td>
+                <td id="lan-proxy"></td>
             </tr>
         </tbody>
     </table>
 
-    <h4>Appid</h4>
+    <h4>AppID</h4>
     <table id="appids" class="table table-bordered table-striped">
         <thead>
             <tr>
@@ -179,7 +179,7 @@
     <button id="pop-up-report" class="btn btn-primary">{{ _( "Diagnostic Info" ) }}</button>
     <br><br>
     <div id="tip">
-            <a href="https://github.com/XX-net/XX-Net/issues">{{ _("Check Github issues") }}</a>{{ _(" or ")}} <a href="https://groups.google.com/forum/#!forum/xx-net">Google Group{{ _(" Discussions") }}</a><br>
+            <a href="https://github.com/XX-net/XX-Net/issues">{{ _("Check Github issues") }}</a>{{ _(" or ")}} <a href="https://groups.google.com/forum/#!forum/xx-net">{{ _("Google Group Discussions") }}</a><br>
     </div>
     <br><br>
 </div> <!-- #details -->
@@ -228,6 +228,7 @@
                     'python-version: ' + result['python_version'],
                     'openssl-version: ' + result['openssl_version'],
 
+                    'lan-proxy: ' + result['lan_proxy'],
                     'use-ipv6: ' + result['use_ipv6'],
                     'gws-ip-num: ' + 'total:' + result['ip_num'] + ' ipv4:' + result['good_ipv4_num'] + ' ipv6:' + result['good_ipv6_num'],
                     'ipv4-status: ' + result['ipv4_state'],
@@ -268,7 +269,7 @@
         });
 
         timer.set({
-            time: 1000,
+            time: 3000,
             autostart: true
         });
 
@@ -317,8 +318,8 @@
                     'td#python-version': result['python_version'],
                     'td#openssl-version': result['openssl_version'],
 
+                    'td#lan-proxy': result['lan_proxy'],
                     'td#proxy-listen': result['proxy_listen'],
-                    'td#pac-url': result['pac_url'],
                     'td#use-ipv6': result['use_ipv6'],
                     'td#working-appid': appid_string(result['gae_appid']),
                     'td#out-of-quota-appids': result['out_of_quota_appids'],
@@ -589,4 +590,3 @@
         });
     };
 </script>
-
