@@ -57,19 +57,19 @@
     <div id="modules-manager" style="display: none;">
         <hr>
         <div class="row-fluid">
-            <div class="span4">{{ _( "Enable" ) }} GAE Proxy</div> <!-- .span4 -->
+            <div class="span4">{{ _( "Enable" ) }} {{ _( "GAE Proxy" ) }}</div> <!-- .span4 -->
             <div class="span8">
                 <input id="gae_proxy-enable" type="checkbox" data-toggle="switch" />
             </div> <!-- .span8 -->
         </div> <!-- .row-fluid -->
         <div class="row-fluid" >
-            <div class="span4">{{ _( "Enable" ) }} X-Tunnel</div> <!-- .span4 -->
+            <div class="span4">{{ _( "Enable" ) }} {{ _( "X-Tunnel" ) }}</div> <!-- .span4 -->
             <div class="span8">
                 <input id="x-tunnel-enable" type="checkbox" data-toggle="switch" />
             </div> <!-- .span8 -->
         </div> <!-- .row-fluid -->
         <div class="row-fluid" >
-            <div class="span4">{{ _( "Enable" ) }} Smart Router</div> <!-- .span4 -->
+            <div class="span4">{{ _( "Enable" ) }} {{ _( "Smart Router" ) }}</div> <!-- .span4 -->
             <div class="span8">
                 <input id="smart-router-enable" type="checkbox" data-toggle="switch" />
             </div> <!-- .span8 -->
@@ -226,6 +226,12 @@
         var isChecked = $(this).is(':checked'),
             key       = 'allow_remote_switch',
             value     = isChecked ? 1 : 0;
+
+        tip('{{ _( "Restarting all remote, wait to refresh." ) }}', 'info');
+
+        setTimeout(function () {
+            location.reload();
+        }, 8 * 1000);
 
         return setConfig(key, value);
     });

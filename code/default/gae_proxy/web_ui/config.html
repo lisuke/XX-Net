@@ -74,7 +74,7 @@
         var gaeAppId          = $('#gae-appid').val(),
             hostAppEngine     = $('#deploy-via-gae').is(':checked') ? 'gae' : 'direct';
 
-        tip('{{ _( "Wait for checking setting..." ) }}', 'info');
+        tip('{{ _( "Checking settings ..." ) }}', 'info');
 
         return setConfig(gaeAppId, hostAppEngine);
     }
@@ -96,7 +96,7 @@
                     tip('{{ _( "Settings saved successfully." ) }}', 'success');
                 } else {
                     if (result['reason'].indexOf("appid fail") > -1){
-                        tip('{{ _( "AppID invalid:" ) }}' + result['reason'].substring(11) + '{{ _( ", deploy appid before using." ) }}', 'error');
+                        tip('{{ _( "AppID invalid:" ) }}' + result['reason'].substring(11) + '{{ _( ", deploy AppID before using." ) }}', 'error');
                     }else{
                         tip('{{ _( "Failed saving settings." ) }}' + ": " + result['reason'], 'error');
                     }
