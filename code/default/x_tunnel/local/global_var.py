@@ -3,8 +3,12 @@ protocol_version = 2
 last_refresh_time = 0
 login_process = False
 data_path = None
+
 config = None
 http_client = None
+cloudflare_front = None
+
+tls_relay_front = None
 session = None
 socks5_server = None
 last_api_error = ""
@@ -14,6 +18,7 @@ quota = 0
 
 server_host = ""
 server_port = 0
+selectable = []
 balance = 0
 
 stat = {

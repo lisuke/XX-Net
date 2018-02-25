@@ -20,14 +20,20 @@ msgstr ""
 msgid "Heroku"
 msgstr ""
 
+msgid "TLS-Relay"
+msgstr ""
+
 msgid "Front"
 msgstr "前端"
 
 msgid "Info"
 msgstr "信息"
 
+msgid "Settings"
+msgstr "设置"
+
 msgid "Plans"
-msgstr "套餐"
+msgstr "购买套餐"
 
 msgid "History"
 msgstr "历史"
@@ -85,6 +91,15 @@ msgstr "到期时间"
 
 msgid "Left Bandwidth"
 msgstr "剩余流量"
+
+msgid "server"
+msgstr "服务器"
+
+msgid "AUTO"
+msgstr "自动"
+
+msgid "Submit"
+msgstr "提交"
 
 msgid "Plans and Pricing"
 msgstr "套餐和价格"
@@ -164,14 +179,26 @@ msgstr "连接服务器失败："
 msgid "Email seems invalid."
 msgstr "电子邮件地址似乎是无效的。"
 
-msgid "Password needs at least 6 charactors."
-msgstr "密码需要至少6个字符。"
+msgid "Do NOT use Chinese-service-provider's Email!"
+msgstr "请勿使用国内服务提供商的邮件地址！"
+
+msgid "Password needs at least 6 charactors, and no more than 20."
+msgstr "密码需要6~20个字符。"
+
+msgid "Password seems invalid."
+msgstr "密码似乎是无效的。"
+
+msgid "(available:a-zA-Z0-9_~!@#$%^&()+-*/=.,:;'\"<>?[]{})"
+msgstr "(可选:a-zA-Z0-9_~!@#$%^&()+-*/=.,:;'\"<>?[]{})"
 
 msgid "Connect to server fail, check Front log first."
 msgstr "连接服务器失败，请检查前端日志。"
 
 msgid "Incorrect Email or password."
 msgstr "用户名或密码不正确。"
+
+msgid "Login fail:"
+msgstr "登录失败："
 
 msgid "Registered successfully, "
 msgstr "注册成功，"
@@ -181,6 +208,9 @@ msgstr "电子邮件地址已被他人使用。"
 
 msgid "Unknown error occurred."
 msgstr "发生未知错误。"
+
+msgid "previously selected server nolonger available, automatically try "
+msgstr "先前所选服务器不再可用，尝试 "
 
 msgid "Failed to log out."
 msgstr "注销失败。"

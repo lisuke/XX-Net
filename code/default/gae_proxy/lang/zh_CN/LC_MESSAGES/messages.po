@@ -116,6 +116,9 @@ msgstr "无效的AppID："
 msgid ", deploy AppID before using."
 msgstr "，使用前请先部署。"
 
+msgid "Failed saving settings: "
+msgstr "保存设置失败："
+
 msgid "Failed saving settings."
 msgstr "保存设置失败。"
 
@@ -127,6 +130,9 @@ msgstr "当前状态："
 
 msgid "idle"
 msgstr "空闲"
+
+msgid "working"
+msgstr "工作"
 
 msgid "Authorization"
 msgstr "授权"
@@ -203,6 +209,15 @@ msgstr "导出IP失败。"
 msgid "IP list"
 msgstr "IP列表"
 
+msgid "Success import "
+msgstr "成功导入 "
+
+msgid " IP."
+msgstr "个IP。"
+
+msgid "Failed importing IP."
+msgstr "导入IP失败。"
+
 msgid "Enable"
 msgstr "启用"
 
@@ -239,17 +254,14 @@ msgstr "帮助"
 msgid "Max scan thread count"
 msgstr "最大扫描线程数"
 
-msgid "Enable IPv6(If it's available)"
-msgstr "使用IPv6"
-
 msgid "AUTO"
 msgstr "自动"
 
-msgid "Force IPv4"
-msgstr "只使用IPv4"
+msgid "Force-IPv4"
+msgstr "仅IPv4"
 
-msgid "Force IPv6"
-msgstr "只使用IPv6"
+msgid "Force-IPv6"
+msgstr "仅IPv6"
 
 msgid "IP range list"
 msgstr "IP段列表"
@@ -278,8 +290,8 @@ msgstr "IPv4 IP数"
 msgid "IPv6 Number"
 msgstr "IPv6 IP数"
 
-msgid "System Status"
-msgstr "系统状态"
+msgid "XX-Net Status"
+msgstr "XX-Net 状态"
 
 msgid "IP Quality"
 msgstr "IP延迟"
@@ -317,8 +329,8 @@ msgstr "代理监听"
 # msgid "PAC URL"
 # msgstr "PAC自动代理地址"
 
-msgid "USE IPv6"
-msgstr "使用IPv6"
+msgid "IP mode"
+msgstr "IP模式"
 
 msgid "LAN proxy"
 msgstr "局域网代理"
@@ -330,10 +342,10 @@ msgid "out-of-quota AppIDs"
 msgstr "超额AppID"
 
 msgid "not-exist AppIDs"
-msgstr "不存在的AppID"
+msgstr "无效AppID"
 
-msgid "System Version"
-msgstr "系统版本"
+msgid "System Info"
+msgstr "系统信息"
 
 msgid "Diagnostic Info"
 msgstr "诊断信息"
@@ -376,8 +388,11 @@ msgstr "指导"
 msgid " to troubleshoot."
 msgstr "去解决。"
 
-msgid "Your local network failed. Please check your network and firewall."
+msgid "Your local network failed, please check your network and firewall."
 msgstr "网络无法连接，请检查网络和防火墙设置。"
+
+msgid " not available, Please check."
+msgstr " 不可用，请检查。"
 
 msgid "You may want to $1turn on IP scaner$2."
 msgstr "您应该考虑$1开启IP扫描器$2。"
